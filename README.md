@@ -25,3 +25,8 @@ Self-Supervised Representation Learning
 https://lilianweng.github.io/lil-log/2019/11/10/self-supervised-learning.html
 
 
+AutoAugment:Learning Augmentation Strategies from Data
+
+https://arxiv.org/pdf/1805.09501.pdf
+
+
