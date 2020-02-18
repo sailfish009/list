@@ -30,3 +30,9 @@ AutoAugment:Learning Augmentation Strategies from Data
 https://arxiv.org/pdf/1805.09501.pdf
 
 
+An Automated Framework for the Extraction of SemanticLegal Metadata from Legal Texts
+
+https://arxiv.org/pdf/2001.11245.pdf
+
+
+
