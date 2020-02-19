@@ -35,4 +35,10 @@ An Automated Framework for the Extraction of SemanticLegal Metadata from Legal T
 https://arxiv.org/pdf/2001.11245.pdf
 
 
+Towards Deep Machine Reasoning: a Prototype-based Deep Neural Network with Decision TreeInference
+
+https://arxiv.org/pdf/2002.03776.pdf
+
+
+
 
