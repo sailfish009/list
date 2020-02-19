@@ -40,5 +40,7 @@ Towards Deep Machine Reasoning: a Prototype-based Deep Neural Network with Decis
 https://arxiv.org/pdf/2002.03776.pdf
 
 
+GAMEPAD:  A  LEARNING ENVIRONMENT FOR THEOREM PROVING
 
+https://arxiv.org/pdf/1806.00608.pdf
 
