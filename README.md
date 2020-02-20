@@ -44,3 +44,8 @@ GAMEPAD:  A  LEARNING ENVIRONMENT FOR THEOREM PROVING
 
 https://arxiv.org/pdf/1806.00608.pdf
 
+
+Graph-Based Global Reasoning Networks
+
+https://arxiv.org/pdf/1811.12814.pdf
+
