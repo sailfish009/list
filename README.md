@@ -53,3 +53,8 @@ https://arxiv.org/pdf/1811.12814.pdf
 Universal-RCNN: Universal Object Detector via Transferable Graph R-CNN
 
 https://arxiv.org/pdf/2002.07417.pdf
+
+
+Self-training with Noisy Student improves ImageNet classification
+
+https://arxiv.org/pdf/1911.04252.pdf
