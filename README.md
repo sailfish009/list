@@ -58,3 +58,8 @@ https://arxiv.org/pdf/2002.07417.pdf
 Self-training with Noisy Student improves ImageNet classification
 
 https://arxiv.org/pdf/1911.04252.pdf
+
+
+Hierarchical Rule Induction Network for Abstract Visual Reasoning
+
+https://arxiv.org/pdf/2002.06838.pdf
