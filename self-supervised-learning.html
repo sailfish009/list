@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    
+      
+
+
+
+
+
+
+    
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Self-Supervised Representation Learning</title>
+
+    <meta name="description" content="Self-supervised learning opens up a huge opportunity for better utilizing unlabelled data, while learning in a supervised learning manner. This post covers m...">
+
+    <meta content="Lil'Log" property="og:site_name">
+    
+        <meta content="Self-Supervised Representation Learning" property="og:title">
+    
+    
+        <meta content="article" property="og:type">
+    
+    
+        <meta content="Self-supervised learning opens up a huge opportunity for better utilizing unlabelled data, while learning in a supervised learning manner. This post covers many interesting ideas of self-supervised learning tasks on images, videos, and control problems." property="og:description">
+    
+    
+        <meta content="https://lilianweng.github.io/2019/11/10/self-supervised-learning.html" property="og:url">
+    
+    
+        <meta content="2019-11-10T18:00:00+00:00" property="article:published_time">
+        <meta content="https://lilianweng.github.io/about/" property="article:author">
+    
+    
+    
+        
+        <meta content="representation-learning" property="article:tag">
+        
+        <meta content="long-read" property="article:tag">
+        
+        <meta content="generative-model" property="article:tag">
+        
+        <meta content="object-recognition" property="article:tag">
+        
+    
+
+    <link rel="shortcut icon" href="/lil-log/assets/favicon_peach.ico">
+    <link rel="stylesheet" href="/lil-log/assets/css/main.css">
+    <link rel="canonical" href="https://lilianweng.github.io/lil-log/2019/11/10/self-supervised-learning.html">
+
+    <!-- For Latex -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+    <!-- Google Analytics -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-8161570-6', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+    <!-- For Facebook share button -->
+    <div id="fb-root"></div>
+    <script>
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    </script>
+
+    <!-- Twitter cards -->
+    <meta name="twitter:site"    content="@lilianweng">
+    <meta name="twitter:creator" content="@Lilian Weng">
+    <meta name="twitter:title"   content="Self-Supervised Representation Learning">
+
+    
+        <meta name="twitter:description" content="<blockquote>
+  <p>Self-supervised learning opens up a huge opportunity for better utilizing unlabelled data, while learning in a supervised learning manner. This post covers many interesting ideas of self-supervised learning tasks on images, videos, and control problems.</p>
+</blockquote>
+
+">
+    
+
+    
+        <meta name="twitter:card"  content="summary">
+        <meta name="twitter:image" content="">
+    
+    <!-- end of Twitter cards -->
+
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner" id='header-bar'>
+
+    <div class="wrapper">
+        
+        <a class="site-title" href="/lil-log/">Lil&#39;Log</a>
+
+        <!-- <nav class="site-nav">
+            <a class="page-link" href="http://lilianweng.github.io" target="_blank">&#x1f349; About</a>
+        </nav> -->
+        <nav class="site-nav">
+            <a class="page-link" href="/lil-log/contact.html">&#x1f917; Contact</a>
+        </nav>
+        <nav class="site-nav">
+            <a class="page-link" href="/lil-log/FAQ.html">&#x1F64B; FAQ</a>
+        </nav>
+        <nav class="site-nav">
+            <a class="page-link" href="/lil-log/archive.html">&#x1f516; Archive</a>
+        </nav>
+
+    </div>
+
+</header>
+
+<script>
+var prevScrollpos = window.pageYOffset;
+window.onscroll = function() {
+var currentScrollPos = window.pageYOffset;
+  if (prevScrollpos > currentScrollPos) {
+    document.getElementById("header-bar").style.top = "0";
+  } else {
+    document.getElementById("header-bar").style.top = "-50px";
+  }
+  prevScrollpos = currentScrollPos;
+}
+</script>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Self-Supervised Representation Learning</h1>
+    <p class="post-meta">
+
+      <time datetime="2019-11-10T18:00:00+00:00" itemprop="datePublished">
+        
+        Nov 10, 2019
+      </time>
+
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        by <span itemprop="name">Lilian Weng</span>
+      </span>
+
+      <span>
+        
+          
+          <a class="post-tag" href="/lil-log/tag/representation-learning"><nobr>representation-learning</nobr>&nbsp;</a>
+        
+          
+          <a class="post-tag" href="/lil-log/tag/long-read"><nobr>long-read</nobr>&nbsp;</a>
+        
+          
+          <a class="post-tag" href="/lil-log/tag/generative-model"><nobr>generative-model</nobr>&nbsp;</a>
+        
+          
+          <a class="post-tag" href="/lil-log/tag/object-recognition"><nobr>object-recognition</nobr>&nbsp;</a>
+        
+      </span>
+      <!--
+      <span class="share-buttons">
+        <span class="share-button"><a class="twitter-share-button" href="https://twitter.com/share" data-show-count="false">Tweet</a><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></span>
+
+        <span class="share-button"><span class="fb-like" data-href="/2019/11/10/self-supervised-learning.html" data-layout="button_count" data-action="like" data-size="small" data-show-faces="false" data-share="true"></span></span>
+      </span>
+      <div style="clear: both;"/>
+      -->
+
+    </p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <blockquote>
+  <p>Self-supervised learning opens up a huge opportunity for better utilizing unlabelled data, while learning in a supervised learning manner. This post covers many interesting ideas of self-supervised learning tasks on images, videos, and control problems.</p>
+</blockquote>
+
+<!--more-->
+
+<p><span style="color: #286ee0;">[Updated on 2020-01-09: add a new session on <a href="#contrastive-predictive-coding">Contrastive Predictive Coding</a>].</span></p>
+
+<p>Given a task and enough labels, supervised learning can solve it really well. Good performance usually requires a decent amount of labels, but collecting manual labels is expensive (i.e. ImageNet) and hard to be scaled up. Considering the amount of unlabelled data (e.g. free text, all the images on the Internet) is substantially more than a limited number of human curated labelled datasets, it is kinda wasteful not to use them. However, unsupervised learning is not easy and usually works much less efficiently than supervised learning.</p>
+
+<p>What if we can get labels for free for unlabelled data and train unsupervised dataset in a supervised manner? We can achieve this by framing a supervised learning task in a special form to predict only a subset of information using the rest. In this way, all the information needed, both inputs and labels, has been provided. This is known as <em>self-supervised learning</em>.</p>
+
+<p>This idea has been widely used in language modeling. The default task for a language model is to predict the next word given the past sequence. <a href="/lil-log/2019/01/31/generalized-language-models.html#bert">BERT</a> adds two other auxiliary tasks and both rely on self-generated labels.</p>
+
+<p style="width: 75%;" class="center"><img src="/lil-log/assets/images/self-sup-lecun.png" alt="Self-supervised learning summary" /></p>
+<p><em>Fig. 1. A great summary of how self-supervised learning tasks can be constructed (Image source: <a href="https://www.youtube.com/watch?v=7I0Qt7GALVk">LeCun’s talk</a>)</em></p>
+
+<p><a href="https://github.com/jason718/awesome-self-supervised-learning">Here</a> is a nicely curated list of papers in self-supervised learning. Please check it out if you are interested in reading more in depth.</p>
+
+<p>Note that this post does not focus on either NLP / <a href="/lil-log/2019/01/31/generalized-language-models.html">language modeling</a> or <a href="https://lilianweng.github.io/lil-log/tag/generative-model">generative modeling</a>.</p>
+
+<ul class="table-of-content" id="markdown-toc">
+  <li><a href="#why-self-supervised-learning" id="markdown-toc-why-self-supervised-learning">Why Self-Supervised Learning?</a></li>
+  <li><a href="#images-based" id="markdown-toc-images-based">Images-Based</a>    <ul>
+      <li><a href="#distortion" id="markdown-toc-distortion">Distortion</a></li>
+      <li><a href="#patches" id="markdown-toc-patches">Patches</a></li>
+      <li><a href="#colorization" id="markdown-toc-colorization">Colorization</a></li>
+      <li><a href="#generative-modeling" id="markdown-toc-generative-modeling">Generative Modeling</a></li>
+      <li><a href="#contrastive-predictive-coding" id="markdown-toc-contrastive-predictive-coding">Contrastive Predictive Coding</a></li>
+    </ul>
+  </li>
+  <li><a href="#video-based" id="markdown-toc-video-based">Video-Based</a>    <ul>
+      <li><a href="#tracking" id="markdown-toc-tracking">Tracking</a></li>
+      <li><a href="#frame-sequence" id="markdown-toc-frame-sequence">Frame Sequence</a></li>
+      <li><a href="#video-colorization" id="markdown-toc-video-colorization">Video Colorization</a></li>
+    </ul>
+  </li>
+  <li><a href="#control-based" id="markdown-toc-control-based">Control-Based</a>    <ul>
+      <li><a href="#multi-view-metric-learning" id="markdown-toc-multi-view-metric-learning">Multi-View Metric Learning</a></li>
+      <li><a href="#autonomous-goal-generation" id="markdown-toc-autonomous-goal-generation">Autonomous Goal Generation</a></li>
+      <li><a href="#references" id="markdown-toc-references">References</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="why-self-supervised-learning">Why Self-Supervised Learning?</h2>
+
+<p>Self-supervised learning empowers us to exploit a variety of labels that come with the data for free. The motivation is quite straightforward. Producing a dataset with clean labels is expensive but unlabeled data is being generated all the time. To make use of this much larger amount of unlabeled data, one way is to set the learning objectives properly so as to get supervision from the data itself.</p>
+
+<p>The <em>self-supervised task</em>, also known as <em>pretext task</em>, guides us to a supervised loss function. However, we usually don’t care about the final performance of this invented task. Rather we are interested in the learned intermediate representation with the expectation that this representation can carry good semantic or structural meanings and can be beneficial to a variety of practical downstream tasks.</p>
+
+<p>For example, we might rotate images at random and train a model to predict how each input image is rotated. The rotation prediction task is made-up, so the actual accuracy is unimportant, like how we treat auxiliary tasks. But we expect the model to learn high-quality latent variables for real-world tasks, such as constructing an object recognition classifier with very few labeled samples.</p>
+
+<p>Broadly speaking, all the generative models can be considered as self-supervised, but with different goals: Generative models focus on creating diverse and realistic images, while self-supervised representation learning care about producing good features generally helpful for many tasks. Generative modeling is not the focus of this post, but feel free to check my <a href="https://lilianweng.github.io/lil-log/tag/generative-model">previous posts</a>.</p>
+
+<h2 id="images-based">Images-Based</h2>
+
+<p>Many ideas have been proposed for self-supervised representation learning on images. A common workflow is to train a model on one or multiple pretext tasks with unlabelled images and then use one intermediate feature layer of this model to feed a multinomial logistic regression classifier on ImageNet classification. The final classification accuracy quantifies how good the learned representation is.</p>
+
+<p>Recently, some researchers proposed to train supervised learning on labelled data and self-supervised pretext tasks on unlabelled data simultaneously with shared weights, like in <a href="https://arxiv.org/abs/1905.03670">Zhai et al, 2019</a> and <a href="https://arxiv.org/abs/1909.11825">Sun et al, 2019</a>.</p>
+
+<h3 id="distortion">Distortion</h3>
+
+<p>We expect small distortion on an image does not modify its original semantic meaning or geometric forms. Slightly distorted images are considered the same as original and thus the learned features are expected to be invariant to distortion.</p>
+
+<p><mark><b>Exemplar-CNN</b></mark> (<a href="https://arxiv.org/abs/1406.6909">Dosovitskiy et al., 2015</a>) create surrogate training datasets with unlabeled image patches:</p>
+<ol>
+  <li>Sample <script type="math/tex">N</script> patches of size 32 × 32 pixels from different images at varying positions and scales, only from regions containing considerable gradients as those areas cover edges and tend to contain objects or parts of objects. They are <em>“exemplary”</em> patches.</li>
+  <li>Each patch is distorted by applying a variety of random transformations (i.e., translation, rotation, scaling, etc.). All the resulting distorted patches are considered to belong to the <em>same surrogate class</em>.</li>
+  <li>The pretext task is to discriminate between a set of surrogate classes. We can arbitrarily create as many surrogate classes as we want.</li>
+</ol>
+
+<p style="width: 60%;" class="center"><img src="/lil-log/assets/images/examplar-cnn.png" alt="Examplar CNN" /></p>
+<p><em>Fig. 2. The original patch of a cute deer is in the top left corner. Random transformations are applied, resulting in a variety of distorted patches. All of them should be classified into the same class in the pretext task. (Image source: <a href="https://arxiv.org/abs/1406.6909">Dosovitskiy et al., 2015</a>)</em></p>
+
+<p><mark><b>Rotation</b></mark> of an entire image (<a href="https://arxiv.org/abs/1803.07728">Gidaris et al. 2018</a> is another interesting and cheap way to modify an input image while the semantic content stays unchanged. Each input image is first rotated by a multiple of <script type="math/tex">90^\circ</script> at random, corresponding to <script type="math/tex">[0^\circ, 90^\circ, 180^\circ, 270^\circ]</script>. The model is trained to predict which rotation has been applied, thus a 4-class classification problem.</p>
+
+<p>In order to identify the same image with different rotations, the model has to learn to recognize high level object parts, such as heads, noses, and eyes, and the relative positions of these parts, rather than local patterns. This pretext task drives the model to learn semantic concepts of objects in this way.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/self-sup-rotation.png" alt="Self supervised by rotation prediction" /></p>
+<p><em>Fig. 3. Illustration of self-supervised learning by rotating the entire input images. The model learns to predict which rotation is applied. (Image source: <a href="https://arxiv.org/abs/1803.07728">Gidaris et al. 2018</a>)</em></p>
+
+<h3 id="patches">Patches</h3>
+
+<p>The second category of self-supervised learning tasks extract multiple patches from one image and ask the model to predict the relationship between these patches.</p>
+
+<p><a href="https://arxiv.org/abs/1505.05192">Doersch et al. (2015)</a> formulates the pretext task as predicting the <mark><b>relative position</b></mark> between two random patches from one image. A model needs to understand the spatial context of objects in order to tell the relative position between parts.</p>
+
+<p>The training patches are sampled in the following way:</p>
+<ol>
+  <li>Randomly sample the first patch without any reference to image content.</li>
+  <li>Considering that the first patch is placed in the middle of a 3x3 grid, and the second patch is sampled from its 8 neighboring locations around it.</li>
+  <li>To avoid the model only catching low-level trivial signals, such as connecting a straight line across boundary or matching local patterns, additional noise is introduced by:
+    <ul>
+      <li>Add gaps between patches</li>
+      <li>Small jitters</li>
+      <li>Randomly downsample some patches to as little as 100 total pixels, and then upsampling it, to build robustness to pixelation.</li>
+      <li>Shift green and magenta toward gray or randomly drop 2 of 3 color channels (See <a href="#chromatic-aberration">“chromatic aberration”</a> below)</li>
+    </ul>
+  </li>
+  <li>The model is trained to predict which one of 8 neighboring locations the second patch is selected from, a classification problem over 8 classes.</li>
+</ol>
+
+<p style="width: 80%;" class="center"><img src="/lil-log/assets/images/self-sup-by-relative-position.png" alt="Self-supervised learning by context" /></p>
+<p><em>Fig. 4. Illustration of self-supervised learning by predicting the relative position of two random patches. (Image source: <a href="https://arxiv.org/abs/1505.05192">Doersch et al., 2015</a>)</em></p>
+
+<p><a href="#chromatic-aberration"></a>Other than trivial signals like boundary patterns or textures continuing, another interesting and a bit surprising trivial solution was found, called <a href="https://en.wikipedia.org/wiki/Chromatic_aberration"><em>“chromatic aberration”</em></a>. It is triggered by different focal lengths of lights at different wavelengths passing through the lens. In the process, there might exist small offsets between color channels. Hence, the model can learn to tell the relative position by simply comparing how green and magenta are separated differently in two patches. This is a trivial solution and has nothing to do with the image content. Pre-processing images by shifting green and magenta toward gray or randomly dropping 2 of 3 color channels can avoid this trivial solution.</p>
+
+<p style="width: 50%;" class="center"><img src="/lil-log/assets/images/chromatic-aberration.png" alt="Chromatic aberration" /></p>
+<p><em>Fig. 5. Illustration of how chromatic aberration happens. (Image source: <a href="https://upload.wikimedia.org/wikipedia/commons/a/aa/Chromatic_aberration_lens_diagram.svg">wikipedia</a>)</em></p>
+
+<p>Since we have already set up a 3x3 grid in each image in the above task, why not use all of 9 patches rather than only 2 to make the task more difficult? Following this idea, <a href="https://arxiv.org/abs/1603.09246">Noroozi &amp; Favaro (2016)</a> designed a <mark><b>jigsaw puzzle</b></mark> game as pretext task: The model is trained to place 9 shuffled patches back to the original locations.</p>
+
+<p>A convolutional network processes each patch independently with shared weights and outputs a probability vector per patch index out of a predefined set of permutations. To control the difficulty of jigsaw puzzles, the paper proposed to shuffle patches according to a predefined permutation set and configured the model to predict a probability vector over all the indices in the set.</p>
+
+<p>Because how the input patches are shuffled does not alter the correct order to predict. A potential improvement to speed up training is to use permutation-invariant graph convolutional network (GCN) so that we don’t have to shuffle the same set of patches multiple times, same idea as in this <a href="https://arxiv.org/abs/1911.00025">paper</a>.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/self-sup-jigsaw-puzzle.png" alt="Jigsaw puzzle" /></p>
+<p><em>Fig. 6. Illustration of self-supervised learning by solving jigsaw puzzle. (Image source: <a href="https://arxiv.org/abs/1603.09246">Noroozi &amp; Favaro, 2016</a>)</em></p>
+
+<p>Another idea is to consider “feature” or “visual primitives” as a scalar-value attribute that can be summed up over multiple patches and compared across different patches. Then the relationship between patches can be defined by <mark><b>counting features</b></mark> and simple arithmetic (<a href="https://arxiv.org/abs/1708.06734">Noroozi, et al, 2017</a>).</p>
+
+<p>The paper considers two transformations:</p>
+<ol>
+  <li><em>Scaling</em>:  If an image is scaled up by 2x, the number of visual primitives should stay the same.</li>
+  <li><em>Tiling</em>: If an image is tiled into a 2x2 grid, the number of visual primitives is expected to be the sum, 4 times the original feature counts.</li>
+</ol>
+
+<p>The model learns a feature encoder <script type="math/tex">\phi(.)</script> using the above feature counting relationship. Given an input image <script type="math/tex">\mathbf{x} \in \mathbb{R}^{m \times n \times 3}</script>, considering two types of transformation operators:</p>
+<ol>
+  <li>Downsampling operator, <script type="math/tex">D: \mathbb{R}^{m \times n \times 3} \mapsto \mathbb{R}^{\frac{m}{2} \times \frac{n}{2} \times 3}</script>: downsample by a factor of 2</li>
+  <li>Tiling operator <script type="math/tex">T_i: \mathbb{R}^{m \times n \times 3} \mapsto \mathbb{R}^{\frac{m}{2} \times \frac{n}{2} \times 3}</script>: extract the <script type="math/tex">i</script>-th tile from a 2x2 grid of the image.</li>
+</ol>
+
+<p>We expect to learn:</p>
+
+<script type="math/tex; mode=display">\phi(\mathbf{x}) = \phi(D \circ \mathbf{x}) = \sum_{i=1}^4 \phi(T_i \circ \mathbf{x})</script>
+
+<p><a href="#counting-feature-loss"></a>Thus the MSE loss is: <script type="math/tex">\mathcal{L}_\text{feat} = \|\phi(D \circ \mathbf{x}) - \sum_{i=1}^4 \phi(T_i \circ \mathbf{x})\|^2_2</script>. To avoid trivial solution <script type="math/tex">\phi(\mathbf{x}) = \mathbf{0}, \forall{\mathbf{x}}</script>, another loss term is added to encourage the difference between features of two different images: <script type="math/tex">\mathcal{L}_\text{diff} = \max(0, c -\|\phi(D \circ \mathbf{y}) - \sum_{i=1}^4 \phi(T_i \circ \mathbf{x})\|^2_2)</script>, where <script type="math/tex">\mathbf{y}</script> is another input image different from <script type="math/tex">\mathbf{x}</script> and <script type="math/tex">c</script> is a scalar constant. The final loss is:</p>
+
+<script type="math/tex; mode=display">\mathcal{L} 
+= \mathcal{L}_\text{feat} + \mathcal{L}_\text{diff} 
+= \|\phi(D \circ \mathbf{x}) - \sum_{i=1}^4 \phi(T_i \circ \mathbf{x})\|^2_2 + \max(0, M -\|\phi(D \circ \mathbf{y}) - \sum_{i=1}^4 \phi(T_i \circ \mathbf{x})\|^2_2)</script>
+
+<p style="width: 70%;" class="center"><img src="/lil-log/assets/images/self-sup-counting-features.png" alt="Counting features" /></p>
+<p><em>Fig. 7. Self-supervised representation learning by counting features. (Image source: <a href="https://arxiv.org/abs/1708.06734">Noroozi, et al, 2017</a>)</em></p>
+
+<h3 id="colorization">Colorization</h3>
+
+<p><mark><b>Colorization</b></mark> can be used as a powerful self-supervised task: a model is trained to color a grayscale input image; precisely the task is to map this image to a distribution over quantized color value outputs (<a href="https://arxiv.org/abs/1603.08511">Zhang et al. 2016</a>).</p>
+
+<p>The model outputs colors in the the <a href="https://en.wikipedia.org/wiki/CIELAB_color_space">CIE L<em>a</em>b* color space</a>. The L<em>a</em>b* color is designed to approximate human vision, while, in contrast, RGB or CMYK models the color output of physical devices.</p>
+<ul>
+  <li>L* component matches human perception of lightness; L* = 0 is black and L* = 100 indicates white.</li>
+  <li>a* component represents green (negative) / magenta (positive) value.</li>
+  <li>b* component models blue (negative) /yellow (positive) value.</li>
+</ul>
+
+<p>Due to the multimodal nature of the colorization problem, cross-entropy loss of predicted probability distribution over binned color values works better than L2 loss of the raw color values. The a<em>b</em> color space is quantized with bucket size 10.</p>
+
+<p>To balance between common colors (usually low a<em>b</em> values, of common backgrounds like clouds, walls, and dirt) and rare colors (which are likely associated with key objects in the image), the loss function is rebalanced with a weighting term that boosts the loss of infrequent color buckets. This is just like why we need both <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf">tf and idf</a> for scoring words in information retrieval model. The weighting term is constructed as: (1-λ) * Gaussian-kernel-smoothed empirical probability distribution + λ * a uniform distribution, where both distributions are over the quantized a<em>b</em> color space.</p>
+
+<h3 id="generative-modeling">Generative Modeling</h3>
+
+<p>The pretext task in generative modeling is to reconstruct the original input while learning meaningful latent representation.</p>
+
+<p>The <mark><b>denoising autoencoder</b></mark> (<a href="https://www.cs.toronto.edu/~larocheh/publications/icml-2008-denoising-autoencoders.pdf">Vincent, et al, 2008</a>) learns to recover an image from a version that is partially corrupted or has random noise. The design is inspired by the fact that humans can easily recognize objects in pictures even with noise, indicating that key visual features can be extracted and separated from noise. See my <a href="/lil-log/2018/08/12/from-autoencoder-to-beta-vae.html#denoising-autoencoder">old post</a>.</p>
+
+<p>The <mark><b>context encoder</b></mark> (<a href="https://arxiv.org/abs/1604.07379">Pathak, et al., 2016</a>) is trained to fill in a missing piece in the image. Let <script type="math/tex">\hat{M}</script> be a binary mask, 0 for dropped pixels and 1 for remaining input pixels. The model is trained with a combination of the reconstruction (L2) loss and the adversarial loss. The removed regions defined by the mask could be of any shape.</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{aligned}
+\mathcal{L}(\mathbf{x}) &= \mathcal{L}_\text{recon}(\mathbf{x}) + \mathcal{L}_\text{adv}(\mathbf{x})\\
+\mathcal{L}_\text{recon}(\mathbf{x}) &= \|(1 - \hat{M}) \odot (\mathbf{x} - E(\hat{M} \odot \mathbf{x})) \|_2^2 \\
+\mathcal{L}_\text{adv}(\mathbf{x}) &= \max_D \mathbb{E}_{\mathbf{x}} [\log D(\mathbf{x}) + \log(1 - D(E(\hat{M} \odot \mathbf{x})))]
+\end{aligned} %]]></script>
+
+<p>where <script type="math/tex">E(.)</script> is the encoder and <script type="math/tex">D(.)</script> is the decoder.</p>
+
+<p style="width: 80%;" class="center"><img src="/lil-log/assets/images/context-encoder.png" alt="Context encoder" /></p>
+<p><em>Fig. 8. Illustration of context encoder. (Image source: <a href="https://arxiv.org/abs/1604.07379">Pathak, et al., 2016</a>)</em></p>
+
+<p>When applying a mask on an image, the context encoder removes information of all the color channels in partial regions. How about only hiding a subset of channels? The <mark><b>split-brain autoencoder</b></mark> (<a href="https://arxiv.org/abs/1611.09842">Zhang et al., 2017</a>) does this by predicting a subset of color channels from the rest of channels. Let the data tensor <script type="math/tex">\mathbf{x} \in \mathbb{R}^{h \times w \times \vert C \vert }</script> with <script type="math/tex">C</script> color channels be the input for the <script type="math/tex">l</script>-th layer of the network. It is split into two disjoint parts, <script type="math/tex">\mathbf{x}_1 \in \mathbb{R}^{h \times w \times \vert C_1 \vert}</script> and <script type="math/tex">\mathbf{x}_2 \in \mathbb{R}^{h \times w \times \vert C_2 \vert}</script>, where <script type="math/tex">C_1 , C_2 \subseteq C</script>. Then two sub-networks are trained to do two complementary predictions: one network <script type="math/tex">f_1</script> predicts <script type="math/tex">\mathbf{x}_2</script> from <script type="math/tex">\mathbf{x}_1</script> and the other network <script type="math/tex">f_1</script> predicts <script type="math/tex">\mathbf{x}_1</script> from <script type="math/tex">\mathbf{x}_2</script>. The loss is either L1 loss or cross entropy if color values are quantized.</p>
+
+<p>The split can happen once on the RGB-D or L<em>a</em>b* colorspace, or happen even in every layer of a CNN network in which the number of channels can be arbitrary.</p>
+
+<p style="width: 65%;" class="center"><img src="/lil-log/assets/images/split-brain-autoencoder.png" alt="Split-brain autoencoder" /></p>
+<p><em>Fig. 9. Illustration of split-brain autoencoder. (Image source: <a href="https://arxiv.org/abs/1611.09842">Zhang et al., 2017</a>)</em></p>
+
+<p>The generative adversarial networks (GANs) are able to learn to map from simple latent variables to arbitrarily complex data distributions. Studies have shown that the latent space of such generative models captures semantic variation in the data; e.g. when training GAN models on human faces, some latent variables are associated with facial expression, glasses, gender, etc  (<a href="https://arxiv.org/abs/1511.06434">Radford et al., 2016</a>).</p>
+
+<p><mark><b>Bidirectional GANs</b></mark> (<a href="https://arxiv.org/abs/1605.09782">Donahue, et al, 2017</a>) introduces an additional encoder <script type="math/tex">E(.)</script> to learn the mappings from the input to the latent variable <script type="math/tex">\mathbf{z}</script>. The discriminator <script type="math/tex">D(.)</script> predicts in the joint space of the input data and latent representation, <script type="math/tex">(\mathbf{x}, \mathbf{z})</script>, to tell apart the generated pair <script type="math/tex">(\mathbf{x}, E(\mathbf{x}))</script> from the real one <script type="math/tex">(G(\mathbf{z}), \mathbf{z})</script>. The model is trained to optimize the objective: <script type="math/tex">\min_{G, E} \max_D V(D, E, G)</script>, where the generator <script type="math/tex">G</script> and the encoder <script type="math/tex">E</script> learn to generate data and latent variables that are realistic enough to confuse the discriminator and at the same time the discriminator <script type="math/tex">D</script> tries to differentiate real and generated data.</p>
+
+<script type="math/tex; mode=display">V(D, E, G) = \mathbb{E}_{\mathbf{x} \sim p_\mathbf{x}} [ \underbrace{\mathbb{E}_{\mathbf{z} \sim p_E(.\vert\mathbf{x})}[\log D(\mathbf{x}, \mathbf{z})]}_{\log D(\text{real})} ] + \mathbb{E}_{\mathbf{z} \sim p_\mathbf{z}} [ \underbrace{\mathbb{E}_{\mathbf{x} \sim p_G(.\vert\mathbf{z})}[\log 1 - D(\mathbf{x}, \mathbf{z})]}_{\log(1- D(\text{fake}))}) ]</script>
+
+<p style="width: 80%;" class="center"><img src="/lil-log/assets/images/bi-GAN.png" alt="BiGAN" /></p>
+<p><em>Fig. 10. Illustration of how Bidirectional GAN works. (Image source: <a href="https://arxiv.org/abs/1605.09782">Donahue, et al, 2017</a>)</em></p>
+
+<h3 id="contrastive-predictive-coding">Contrastive Predictive Coding</h3>
+
+<p>The <mark><b>Contrastive Predictive Coding (CPC)</b></mark> (<a href="https://arxiv.org/abs/1807.03748">van den Oord, et al. 2018</a>) is an approach for unsupervised learning from high-dimensional data by translating a generative modeling problem to a classification problem. The <em>contrastive loss</em> or <em>InfoNCE loss</em> in CPC, inspired by <a href="/lil-log/2017/10/15/learning-word-embedding.html#noise-contrastive-estimation-nce">Noise Contrastive Estimation (NCE)</a>, uses cross-entropy loss to measure how well the model can classify the “future” representation amongst a set of unrelated “negative” samples. Such design is partially motivated by the fact that the unimodal loss like MSE has no enough capacity but learning a full generative model could be too expensive.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/CPC-audio.png" alt="CPC on audio input" /></p>
+<p><em>Fig. 11. Illustration of applying Contrastive Predictive Coding on the audio input. (Image source: <a href="https://arxiv.org/abs/1807.03748">van den Oord, et al. 2018</a>)</em></p>
+
+<p>CPC uses an encoder to compress the input data <script type="math/tex">z_t = g_\text{enc}(x_t)</script> and an <em>autoregressive</em> decoder to learn the high-level context that are potentially shared across future predictions, <script type="math/tex">c_t = g_\text{ar}(z_{\leq t})</script>. The end-to-end training relies on the NCE-inspired contrastive loss.</p>
+
+<p>While predicing future information, CPC is optimized to maximize the the mutual information between input <script type="math/tex">x</script> and context vector <script type="math/tex">c</script>:</p>
+
+<script type="math/tex; mode=display">I(x; c) = \sum_{x, c} p(x, c) \log\frac{p(x, c)}{p(x)p(c)} = \sum_{x, c} p(x, c)\log\frac{p(x|c)}{p(x)}</script>
+
+<p>Rather than modeling the future observations <script type="math/tex">p_k(x_{t+k} \vert c_t)</script> directly (which could be fairly expensive), CPC models a density function to preserve the mutual information between <script type="math/tex">x_{t+k}</script> and <script type="math/tex">c_t</script>:</p>
+
+<script type="math/tex; mode=display">f_k(x_{t+k}, c_t) = \exp(z_{t+k}^\top W_k c_t) \propto \frac{p(x_{t+k}|c_t)}{p(x_{t+k})}</script>
+
+<p>where <script type="math/tex">f_k</script> can be unnormalized and a linear transformation <script type="math/tex">W_k^\top c_t</script> is used for the prediction with a different <script type="math/tex">W_k</script> matrix for every step <script type="math/tex">k</script>.</p>
+
+<p>Given a set of <script type="math/tex">N</script> random samples <script type="math/tex">X = \{x_1, \dots, x_N\}</script> containing only one positive sample <script type="math/tex">x_t \sim p(x_{t+k} \vert c_t)</script> and <script type="math/tex">N-1</script> negative samples <script type="math/tex">x_{i \neq t} \sim p(x_{t+k})</script>, the cross-entropy loss for classifying the positive sample (where <script type="math/tex">\frac{f_k}{\sum f_k}</script> is the prediction) correctly is:</p>
+
+<script type="math/tex; mode=display">\mathcal{L}_N = - \mathbb{E}_X \Big[\log \frac{f_k(x_{t+k}, c_t)}{\sum_{i=1}^N f_k (x_i, c_t)}\Big]</script>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/CPC-image.png" alt="CPC on images" /></p>
+<p><em>Fig. 12. Illustration of applying Contrastive Predictive Coding on images. (Image source: <a href="https://arxiv.org/abs/1807.03748">van den Oord, et al. 2018</a>)</em></p>
+
+<p>When using CPC on images (<a href="https://arxiv.org/abs/1905.09272">Henaff, et al. 2019</a>), the predictor network should only access a masked feature set to avoid a trivial prediction. Precisely:</p>
+<ol>
+  <li>Each input image is divided into a set of overlapped patches and each patch is encoded by a resnet encoder, resulting in compressed feature vector <script type="math/tex">z_{i,j}</script>.</li>
+  <li>A masked conv net makes prediction with a mask such that the receptive field of a given output neuron can only see things above it in the image. Otherwise, the prediction problem would be trivial. The prediction can be made in both directions (top-down and bottom-up).</li>
+  <li>The prediction is made for <script type="math/tex">z_{i+k, j}</script> from context <script type="math/tex">c_{i,j}</script>: <script type="math/tex">\hat{z}_{i+k, j} = W_k c_{i,j}</script>.</li>
+</ol>
+
+<p>A contrastive loss quantifies this prediction with a goal to correctly identify the target among a set of negative representation <script type="math/tex">\{z_l\}</script> sampled from other patches in the same image and other images in the same batch:</p>
+
+<script type="math/tex; mode=display">\mathcal{L}_\text{CPC} 
+= -\sum_{i,j,k} \log p(z_{i+k, j} \vert \hat{z}_{i+k, j}, \{z_l\}) 
+= -\sum_{i,j,k} \log \frac{\exp(\hat{z}_{i+k, j}^\top z_{i+k, j})}{\exp(\hat{z}_{i+k, j}^\top z_{i+k, j}) + \sum_l \exp(\hat{z}_{i+k, j}^\top z_l)}</script>
+
+<h2 id="video-based">Video-Based</h2>
+
+<p>A video contains a sequence of semantically related frames. Nearby frames are close in time and more correlated than frames further away. The order of frames describes certain rules of reasonings and physical logics; such as that object motion should be smooth and gravity is pointing down.</p>
+
+<p>A common workflow is to train a model on one or multiple pretext tasks with unlabelled videos and then feed one intermediate feature layer of this model to fine-tune a simple model on downstream tasks of action classification, segmentation or object tracking.</p>
+
+<h3 id="tracking">Tracking</h3>
+
+<p>The movement of an object is traced by a sequence of video frames. The difference between how the same object is captured on the screen in close frames is usually not big, commonly triggered by small motion of the object or the camera. Therefore any visual representation learned for the same object across close frames should be close in the latent feature space. Motivated by this idea, <a href="https://arxiv.org/abs/1505.00687">Wang &amp; Gupta, 2015</a> proposed a way of unsupervised learning of visual representation by <mark><b>tracking moving objects</b></mark> in videos.</p>
+
+<p>Precisely patches with motion are tracked over a small time window (e.g. 30 frames). The first patch <script type="math/tex">\mathbf{x}</script> and the last patch <script type="math/tex">\mathbf{x}^+</script> are selected and used as training data points. If we train the model directly to minimize the difference between feature vectors of two patches, the model may only learn to map everything to the same value. To avoid such a trivial solution, same as <a href="#counting-feature-loss">above</a>, a random third patch <script type="math/tex">\mathbf{x}^-</script> is added. The model learns the representation by enforcing the distance between two tracked patches to be closer than the distance between the first patch and a random one in the feature space, <script type="math/tex">D(\mathbf{x}, \mathbf{x}^-)) > D(\mathbf{x}, \mathbf{x}^+)</script>, where <script type="math/tex">D(.)</script> is the cosine distance,</p>
+
+<script type="math/tex; mode=display">D(\mathbf{x}_1, \mathbf{x}_2) = 1 - \frac{f(\mathbf{x}_1) f(\mathbf{x}_2)}{\|f(\mathbf{x}_1)\| \|f(\mathbf{x}_2\|)}</script>
+
+<p>The loss function is:</p>
+
+<script type="math/tex; mode=display">\mathcal{L}(\mathbf{x}, \mathbf{x}^+, \mathbf{x}^-) 
+= \max\big(0, D(\mathbf{x}, \mathbf{x}^+) - D(\mathbf{x}, \mathbf{x}^-) + M\big) + \text{weight decay regularization term}</script>
+
+<p>where <script type="math/tex">M</script> is a scalar constant controlling for the minimum gap between two distances; <script type="math/tex">M=0.5</script> in the paper. The loss enforces <script type="math/tex">D(\mathbf{x}, \mathbf{x}^-) >= D(\mathbf{x}, \mathbf{x}^+) + M</script> at the optimal case.</p>
+
+<p><a href="#triplet-loss"></a>This form of loss function is also known as <a href="https://arxiv.org/abs/1503.03832">triplet loss</a> in the face recognition task, in which the dataset contains images of multiple people from multiple camera angles. Let <script type="math/tex">\mathbf{x}^a</script> be an anchor image of a specific person, <script type="math/tex">\mathbf{x}^p</script> be a positive image of this same person from a different angle and <script type="math/tex">\mathbf{x}^n</script> be a negative image of a different person. In the embedding space, <script type="math/tex">\mathbf{x}^a</script> should be closer to <script type="math/tex">\mathbf{x}^p</script> than <script type="math/tex">\mathbf{x}^n</script>:</p>
+
+<script type="math/tex; mode=display">\mathcal{L}_\text{triplet}(\mathbf{x}^a, \mathbf{x}^p, \mathbf{x}^n) = \max(0, \|\phi(\mathbf{x}^a) - \phi(\mathbf{x}^p) \|_2^2 -  \|\phi(\mathbf{x}^a) - \phi(\mathbf{x}^n) \|_2^2 + M)</script>
+
+<p><a href="#n-pair-loss"></a>A slightly different form of the triplet loss, named <a href="https://papers.nips.cc/paper/6200-improved-deep-metric-learning-with-multi-class-n-pair-loss-objective">n-pair loss</a> is also commonly used for learning observation embedding in robotics tasks. See a <a href="#multi-view-metric-learning">later section</a> for more related content.</p>
+
+<p style="width: 70%;" class="center"><img src="/lil-log/assets/images/tracking-videos.png" alt="tracking videos" /></p>
+<p><em>Fig. 11. Overview of learning representation by tracking objects in videos. (a) Identify moving patches in short traces; (b) Feed two related patched and one random patch into a conv network with shared weights. (c) The loss function enforces the distance between related patches to be closer than the distance between random patches. (Image source: <a href="https://arxiv.org/abs/1505.00687">Wang &amp; Gupta, 2015</a>)</em></p>
+
+<p>Relevant patches are tracked and extracted through a two-step unsupervised <a href="https://en.wikipedia.org/wiki/Optical_flow">optical flow</a> approach:</p>
+<ol>
+  <li>Obtain <a href="https://www.vision.ee.ethz.ch/~surf/eccv06.pdf">SURF</a> interest points and use <a href="https://hal.inria.fr/hal-00873267v2/document">IDT</a> to obtain motion of each SURF point.</li>
+  <li>Given the trajectories of SURF interest points, classify these points as moving if the flow magnitude is more than 0.5 pixels.</li>
+</ol>
+
+<p>During training, given a pair of correlated patches <script type="math/tex">\mathbf{x}</script> and <script type="math/tex">\mathbf{x}^+</script>, <script type="math/tex">K</script> random patches <script type="math/tex">\{\mathbf{x}^-\}</script> are sampled in this same batch to form <script type="math/tex">K</script> training triplets. After a couple of epochs, <em>hard negative mining</em> is applied to make the training harder and more efficient, that is, to search for random patches that maximize the loss and use them to do gradient updates.</p>
+
+<h3 id="frame-sequence">Frame Sequence</h3>
+
+<p>Video frames are naturally positioned in chronological order. Researchers have proposed several self-supervised tasks, motivated by the expectation that good representation should learn the <em>correct sequence</em> of frames.</p>
+
+<p>One idea is to <mark><b>validate frame order</b></mark> (<a href="https://arxiv.org/abs/1603.08561">Misra, et al 2016</a>). The pretext task is to determine whether a sequence of frames from a video is placed in the correct temporal order (“temporal valid”). The model needs to track and reason about small motion of an object across frames to complete such a task.</p>
+
+<p>The training frames are sampled from high-motion windows. Every time 5 frames are sampled <script type="math/tex">(f_a, f_b, f_c, f_d, f_e)</script> and the timestamps are in order <script type="math/tex">% <![CDATA[
+a < b < c < d < e %]]></script>. Out of 5 frames, one positive tuple <script type="math/tex">(f_b, f_c, f_d)</script> and two negative tuples, <script type="math/tex">(f_b, f_a, f_d)</script> and <script type="math/tex">(f_b, f_e, f_d)</script> are created. The parameter <script type="math/tex">\tau_\max = \vert b-d \vert</script> controls the difficulty of positive training instances (i.e. higher → harder) and the parameter <script type="math/tex">\tau_\min = \min(\vert a-b \vert, \vert d-e \vert)</script> controls the difficulty of negatives (i.e. lower → harder).</p>
+
+<p>The pretext task of video frame order validation is shown to improve the performance on the downstream task of action recognition when used as a pretraining step.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/frame-order-validation.png" alt="frame order validation" /></p>
+<p><em>Fig. 12. Overview of learning representation by validating the order of video frames. (a) the data sample process; (b) the model is a triplet siamese network, where all input frames have shared weights. (Image source: <a href="https://arxiv.org/abs/1603.08561">Misra, et al 2016</a>)</em></p>
+
+<p>The task in <em>O3N</em> (Odd-One-Out Network; <a href="https://arxiv.org/abs/1611.06646">Fernando et al. 2017</a>) is based on video frame sequence validation too. One step further from above, the task is to <mark><b>pick the incorrect sequence</b></mark> from multiple video clips.</p>
+
+<p>Given <script type="math/tex">N+1</script> input video clips, one of them has frames shuffled, thus in the wrong order, and the rest <script type="math/tex">N</script> of them remain in the correct temporal order. O3N learns to predict the location of the odd video clip. In their experiments, there are 6 input clips and each contain 6 frames.</p>
+
+<p>The <mark><b>arrow of time</b></mark> in a video contains very informative messages, on both low-level physics (e.g. gravity pulls objects down to the ground; smoke rises up; water flows downward.) and high-level event reasoning (e.g. fish swim forward; you can break an egg but cannot revert it.). Thus another idea is inspired by this to learn latent representation by predicting the arrow of time (AoT) — whether video playing forwards or backwards (<a href="https://www.robots.ox.ac.uk/~vgg/publications/2018/Wei18/wei18.pdf">Wei et al., 2018</a>).</p>
+
+<p>A classifier should capture both low-level physics and high-level semantics in order to predict the arrow of time. The proposed <em>T-CAM</em> (Temporal Class-Activation-Map) network accepts <script type="math/tex">T</script> groups, each containing a number of frames of optical flow. The conv layer outputs from each group are concatenated and fed into binary logistic regression for predicting the arrow of time.</p>
+
+<p style="width: 65%;" class="center"><img src="/lil-log/assets/images/learning-arrow-of-time.png" alt="Learning the arrow of time" /></p>
+<p><em>Fig. 13. Overview of learning representation by predicting the arrow of time. (a) Conv features of multiple groups of frame sequences are concatenated. (b) The top level contains 3 conv layers and average pooling. (Image source: <a href="https://www.robots.ox.ac.uk/~vgg/publications/2018/Wei18/wei18.pdf">Wei et al, 2018</a>)</em></p>
+
+<p>Interestingly, there exist a couple of artificial cues in the dataset. If not handled properly, they could lead to a trivial classifier without relying on the actual video content:</p>
+<ul>
+  <li>Due to the video compression, the black framing might not be completely black but instead may contain certain information on the chronological order. Hence black framing should be removed in the experiments.</li>
+  <li>Large camera motion, like vertical translation or zoom-in/out, also provides strong signals for the arrow of time but independent of content. The processing stage should stabilize the camera motion.</li>
+</ul>
+
+<p>The AoT pretext task is shown to improve the performance on action classification downstream task when used as a pretraining step. Note that fine-tuning is still needed.</p>
+
+<h3 id="video-colorization">Video Colorization</h3>
+
+<p><a href="https://arxiv.org/abs/1806.09594">Vondrick et al. (2018)</a> proposed <mark><b>video colorization</b></mark> as a self-supervised learning problem, resulting in a rich representation that can be used for video segmentation and unlabelled visual region tracking, <em>without extra fine-tuning</em>.</p>
+
+<p>Unlike the image-based <a href="#colorization">colorization</a>, here the task is to copy colors from a normal reference frame in color to another target frame in grayscale by leveraging the natural temporal coherency of colors across video frames (thus these two frames shouldn’t be too far apart in time). In order to copy colors consistently, the model is designed to learn to keep track of correlated pixels in different frames.</p>
+
+<p style="width: 80%;" class="center"><img src="/lil-log/assets/images/video-colorization.png" alt="Video colorization" /></p>
+<p><em>Fig. 14. Video colorization by copying colors from a reference frame to target frames in grayscale.  (Image source: <a href="https://arxiv.org/abs/1806.09594">Vondrick et al. 2018</a>)</em></p>
+
+<p>The idea is quite simple and smart. Let <script type="math/tex">c_i</script> be the true color of the <script type="math/tex">i-th</script> pixel in the reference frame and <script type="math/tex">c_j</script> be the color of <script type="math/tex">j</script>-th pixel in the target frame. The predicted color of <script type="math/tex">j</script>-th color in the target <script type="math/tex">\hat{c}_j</script> is a weighted sum of colors of all the pixels in reference, where the weighting term measures the similarity:</p>
+
+<script type="math/tex; mode=display">\hat{c}_j = \sum_i A_{ij} c_i \text{ where } A_{ij} = \frac{\exp(f_i f_j)}{\sum_{i'} \exp(f_{i'} f_j)}</script>
+
+<p>where <script type="math/tex">f</script> are learned embeddings for corresponding pixels; <script type="math/tex">i’</script> indexes all the pixels in the reference frame. The weighting term implements an attention-based pointing mechanism, similar to <a href="/lil-log/2018/11/30/meta-learning.html#matching-networks">matching network</a> and <a href="/lil-log/2018/06/24/attention-attention.html#pointer-network">pointer network</a>. As the full similarity matrix could be really large, both frames are downsampled. The categorical cross-entropy loss between <script type="math/tex">c_j</script> and <script type="math/tex">\hat{c}_j</script> is used with quantized colors, just like in <a href="https://arxiv.org/abs/1603.08511">Zhang et al. 2016</a>.</p>
+
+<p>Based on how the reference frame are marked, the model can be used to complete several color-based downstream tasks such as tracking segmentation or human pose in time. No fine-tuning is needed. See Fig. 15.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/video-colorization-examples.png" alt="Video colorization for tracking" /></p>
+<p><em>Fig. 15. Use video colorization to track object segmentation and human pose in time. (Image source: <a href="https://arxiv.org/abs/1806.09594">Vondrick et al. (2018)</a>)</em></p>
+
+<h2 id="control-based">Control-Based</h2>
+
+<p>When running a RL policy in the real world, such as controlling a physical robot on visual inputs, it is non-trivial to properly track states, obtain reward signals or determine whether a goal is achieved for real. The visual data has a lot of noise that is irrelevant to the true state and thus the equivalence of states cannot be inferred from pixel-level comparison. Self-supervised representation learning has shown great potential in learning useful state embedding that can be used directly as input to a control policy.</p>
+
+<p>All the cases discussed in this section are in robotic learning, mainly for state representation from multiple camera views and goal representation.</p>
+
+<h3 id="multi-view-metric-learning">Multi-View Metric Learning</h3>
+
+<p>The concept of metric learning has been mentioned multiple times in the <a href="#counting-feature-loss">previous</a> <a href="#tracking">sections</a>. A common setting is: Given a triple of samples, (<em>anchor</em> <script type="math/tex">s_a</script>, <em>positive</em> sample <script type="math/tex">s_p</script>, <em>negative</em> sample <script type="math/tex">s_n</script>), the learned representation embedding <script type="math/tex">\phi(s)</script> fulfills that <script type="math/tex">s_a</script> stays close to <script type="math/tex">s_p</script> but far away from <script type="math/tex">s_n</script> in the latent space.</p>
+
+<p><a href="#grasp2vec"></a><mark><b>Grasp2Vec</b></mark> (<a href="https://arxiv.org/abs/1811.06964">Jang &amp; Devin et al., 2018</a>) aims to learn an object-centric vision representation in the robot grasping task from free, unlabelled grasping activities. By object-centric, it means that, irrespective of how the environment or the robot looks like, if two images contain similar items, they should be mapped to similar representation; otherwise the embeddings should be far apart.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/grasp2vec.png" alt="Grasp2vec" /></p>
+<p><em>Fig. 16. A conceptual illustration of how grasp2vec learns an object-centric state embedding. (Image source: <a href="https://arxiv.org/abs/1811.06964">Jang &amp; Devin et al., 2018</a>)</em></p>
+
+<p>The grasping system can tell whether it moves an object but cannot tell which object it is. Cameras are set up to take images of the entire scene and the grasped object. During early training, the grasp robot is executed to grasp any object <script type="math/tex">o</script> at random, producing a triple of images, <script type="math/tex">(s_\text{pre}, s_\text{post}, o)</script>:</p>
+<ul>
+  <li><script type="math/tex">o</script> is an image of the grasped object held up to the camera;</li>
+  <li><script type="math/tex">s_\text{pre}</script> is an image of the scene <em>before</em> grasping, with the object <script type="math/tex">o</script> in the tray;</li>
+  <li><script type="math/tex">s_\text{post}</script> is an image of the same scene <em>after</em> grasping, without the object <script type="math/tex">o</script> in the tray.</li>
+</ul>
+
+<p>To learn object-centric representation, we expect the difference between embeddings of <script type="math/tex">s_\text{pre}</script> and <script type="math/tex">s_\text{post}</script> to capture the removed object <script type="math/tex">o</script>. The idea is quite interesting and similar to relationships that have been observed in <a href="/lil-log/2017/10/15/learning-word-embedding.html">word embedding</a>, <a href="https://developers.google.com/machine-learning/crash-course/embeddings/translating-to-a-lower-dimensional-space">e.g.</a> distance(“king”, “queen”) ≈ distance(“man”, “woman”).</p>
+
+<p>Let <script type="math/tex">\phi_s</script> and <script type="math/tex">\phi_o</script> be the embedding functions for the scene and the object respectively. The model learns the representation by minimizing the distance between <script type="math/tex">\phi_s(s_\text{pre}) - \phi_s(s_\text{post})</script> and <script type="math/tex">\phi_o(o)</script> using <em>n-pair loss</em>:</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{aligned}
+\mathcal{L}_\text{grasp2vec} &= \text{NPair}(\phi_s(s_\text{pre}) - \phi_s(s_\text{post}), \phi_o(o)) + \text{NPair}(\phi_o(o), \phi_s(s_\text{pre}) - \phi_s(s_\text{post})) \\
+\text{where }\text{NPair}(a, p) &= \sum_{i<B} -\log\frac{\exp(a_i^\top p_j)}{\sum_{j<B, i\neq j}\exp(a_i^\top p_j)} + \lambda (\|a_i\|_2^2 + \|p_i\|_2^2)
+\end{aligned} %]]></script>
+
+<p>where <script type="math/tex">B</script> refers to a batch of (anchor, positive) sample pairs.</p>
+
+<p>When framing representation learning as metric learning, <a href="https://papers.nips.cc/paper/6200-improved-deep-metric-learning-with-multi-class-n-pair-loss-objective"><strong>n-pair loss</strong></a> is a common choice. Rather than processing explicit a triple of (anchor, positive, negative) samples, the n-pairs loss treats all other positive instances in one mini-batch across pairs as negatives.</p>
+
+<p>The embedding function <script type="math/tex">\phi_o</script> works great for presenting a goal <script type="math/tex">g</script> with an image. The reward function that quantifies how close the actually grasped object <script type="math/tex">o</script> is close to the goal is defined as <script type="math/tex">r = \phi_o(g) \cdot \phi_o(o)</script>. Note that computing rewards only relies on the learned latent space and doesn’t involve ground truth positions, so it can be used for training on real robots.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/grasp2vec-attention-map.png" alt="Grasp2vec attention map" /></p>
+<p><em>Fig. 17. Localization results of grasp2vec embedding. The heatmap of localizing a goal object in a pre-grasping scene is defined as <script type="math/tex">\phi_o(o)^\top \phi_{s, \text{spatial}} (s_\text{pre})</script>, where <script type="math/tex">\phi_{s, \text{spatial}}</script> is the output of the last resnet block after ReLU. The fourth column is a failure case and the last three columns take real images as goals. (Image source: <a href="https://arxiv.org/abs/1811.06964">Jang &amp; Devin et al., 2018</a>)</em></p>
+
+<p>Other than the embedding-similarity-based reward function, there are a few other tricks for training the RL policy in the grasp2vec framework:</p>
+<ul>
+  <li><em>posthoc labelingP</em>: Augment the dataset by labeling a randomly grasped object as a correct goal, like HER (Hindsight Experience Replay; <a href="https://papers.nips.cc/paper/7090-hindsight-experience-replay.pdf">Andrychowicz, et al., 2017</a>).</li>
+  <li><em>Auxiliary goal augmentation</em>: Augment the replay buffer even further by relabeling transitions with unachieved goals; precisely, in each iteration, two goals are sampled <script type="math/tex">(g, g')</script> and both are used to add new transitions into replay buffer.</li>
+</ul>
+
+<p><a href="#tcn"></a><strong>TCN</strong> (<mark><b>Time-Contrastive Networks</b></mark>; <a href="https://arxiv.org/abs/1704.06888">Sermanet, et al. 2018</a>) learn from multi-camera view videos with the intuition that different viewpoints at the same timestep of the same scene should share the same embedding (like in <a href="https://arxiv.org/abs/1503.03832">FaceNet</a>) while embedding should vary in time, even of the same camera viewpoint. Therefore embedding captures the semantic meaning of the underlying state rather than visual similarity. The TCN embedding is trained with <a href="#triplet-loss">triplet loss</a>.</p>
+
+<p>The training data is collected by taking videos of the same scene simultaneously but from different angles. All the videos are unlabelled.</p>
+
+<p style="width: 80%;" class="center"><img src="/lil-log/assets/images/TCN.png" alt="Time-contrastive network" /></p>
+<p><em>Fig. 18. An illustration of time-contrastive approach for learning state embedding. The blue frames selected from two camera views at the same timestep are anchor and positive samples, while the red frame at a different timestep is the negative sample.</em></p>
+
+<p>TCN embedding extracts visual features that are invariant to camera configurations. It can be used to construct a reward function for imitation learning based on the euclidean distance between the demo video and the observations in the latent space.</p>
+
+<p>A further improvement over TCN is to learn embedding over multiple frames jointly rather than a single frame, resulting in <strong>mfTCN</strong> (<b><mark>Multi-frame</mark> Time-Contrastive Networks</b>; <a href="https://arxiv.org/abs/1808.00928">Dwibedi et al., 2019</a>). Given a set of videos from several synchronized camera viewpoints, <script type="math/tex">v_1, v_2, \dots, v_k</script>, the frame at time <script type="math/tex">t</script> and the previous <script type="math/tex">n-1</script> frames selected with stride <script type="math/tex">s</script> in each video are aggregated and mapped into one embedding vector, resulting in a lookback window of size $(n−1) \times s + 1$. Each frame first goes through a CNN to extract low-level features and then we use 3D temporal convolutions to aggregate frames in time. The model is trained with <a href="#n-pair-loss">n-pairs loss</a>.</p>
+
+<p style="width: 75%;" class="center"><img src="/lil-log/assets/images/mfTCN.png" alt="mfTCN" /></p>
+<p><em>Fig. 19. The sampling process for training mfTCN. (Image source: <a href="https://arxiv.org/abs/1808.00928">Dwibedi et al., 2019</a>)</em></p>
+
+<p>The training data is sampled as follows:</p>
+<ol>
+  <li>First we construct two pairs of video clips. Each pair contains two clips from different camera views but with synchronized timesteps. These two sets of videos should be far apart in time.</li>
+  <li>Sample a fixed number of frames from each video clip in the same pair simultaneously with the same stride.</li>
+  <li>Frames with the same timesteps are trained as positive samples in the n-pair loss, while frames across pairs are negative samples.</li>
+</ol>
+
+<p>mfTCN embedding can capture the position and velocity of objects in the scene (e.g. in cartpole) and can also be used as inputs for policy.</p>
+
+<h3 id="autonomous-goal-generation">Autonomous Goal Generation</h3>
+
+<p><strong>RIG</strong> (<b>Reinforcement learning with <mark>Imagined Goals</mark></b>; <a href="https://arxiv.org/abs/1807.04742">Nair et al., 2018</a>) described a way to train a goal-conditioned policy with unsupervised representation learning. A policy learns from self-supervised practice by first imagining “fake” goals and then trying to achieve them.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/RIG.png" alt="RIG" /></p>
+<p><em>Fig. 20. The workflow of RIG. (Image source: <a href="https://arxiv.org/abs/1807.04742">Nair et al., 2018</a>)</em></p>
+
+<p>The task is to control a robot arm to push a small puck on a table to a desired position. The desired position, or the goal, is present in an image. During training, it learns latent embedding of both state <script type="math/tex">s</script> and goal <script type="math/tex">g</script> through $\beta$-VAE encoder and the control policy operates entirely in the latent space.</p>
+
+<p>Let’s say a <a href="/lil-log/2018/08/12/from-autoencoder-to-beta-vae.html#beta-vae"><script type="math/tex">\beta</script>-VAE</a> has an encoder <script type="math/tex">q_\phi</script> mapping input states to latent variable <script type="math/tex">z</script> which is modeled by a Gaussian distribution and a decoder <script type="math/tex">p_\psi</script> mapping <script type="math/tex">z</script> back to the states. The state encoder in RIG is set to be the mean of <script type="math/tex">\beta</script>-VAE encoder.</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{aligned}
+z &\sim q_\phi(z \vert s) = \mathcal{N}(z; \mu_\phi(s), \sigma^2_\phi(s)) \\
+\mathcal{L}_{\beta\text{-VAE}} &= - \mathbb{E}_{z \sim q_\phi(z \vert s)} [\log p_\psi (s \vert z)] + \beta D_\text{KL}(q_\phi(z \vert s) \| p_\psi(s)) \\
+e(s) &\triangleq \mu_\phi(s)
+\end{aligned} %]]></script>
+
+<p>The reward is the Euclidean distance between state and goal embedding vectors: <script type="math/tex">r(s, g) = -\|e(s) - e(g)\|</script>. Similar to <a href="#grasp2vec">grasp2vec</a>, RIG applies data augmentation as well by latent goal relabeling: precisely half of the goals are generated from the prior at random and the other half are selected using HER. Also same as grasp2vec, rewards do not depend on any ground truth states but only the learned state encoding, so it can be used for training on real robots.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/RIG-algorithm.png" alt="RIG algorithm" /></p>
+<p><em>Fig. 21. The algorithm of RIG. (Image source: <a href="https://arxiv.org/abs/1807.04742">Nair et al., 2018</a>)</em></p>
+
+<p>The problem with RIG is a lack of object variations in the imagined goal pictures. If <script type="math/tex">\beta</script>-VAE is only trained with a black puck, it would not be able to create a goal with other objects like blocks of different shapes and colors. A follow-up improvement replaces <script type="math/tex">\beta</script>-VAE with a <strong>CC-VAE</strong> (Context-Conditioned VAE; <a href="https://arxiv.org/abs/1910.11670">Nair, et al., 2019</a>), inspired by <strong>CVAE</strong> (Conditional VAE; <a href="https://papers.nips.cc/paper/5775-learning-structured-output-representation-using-deep-conditional-generative-models">Sohn, Lee &amp; Yan, 2015</a>), for goal generation.</p>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/CC-RIG.png" alt="Context-conditional RIG" /></p>
+<p><em>Fig. 22. The workflow of context-conditioned RIG. (Image source: <a href="https://arxiv.org/abs/1910.11670">Nair, et al., 2019</a>).</em></p>
+
+<p>A CVAE conditions on a context variable <script type="math/tex">c</script>. It trains an encoder <script type="math/tex">q_\phi(z \vert s, c)</script> and a decoder <script type="math/tex">p_\psi (s \vert z, c)</script> and note that both have access to <script type="math/tex">c</script>. The CVAE loss penalizes information passing from the input state <script type="math/tex">s</script> through an information bottleneck but allows for <em>unrestricted</em> information flow from <script type="math/tex">c</script> to both encoder and decoder.</p>
+
+<script type="math/tex; mode=display">\mathcal{L}_\text{CVAE} = - \mathbb{E}_{z \sim q_\phi(z \vert s,c)} [\log p_\psi (s \vert z, c)] + \beta D_\text{KL}(q_\phi(z \vert s, c) \| p_\psi(s))</script>
+
+<p>To create plausible goals, CC-VAE conditions on a starting state <script type="math/tex">s_0</script> so that the generated goal presents a consistent type of object as in <script type="math/tex">s_0</script>. This goal consistency is necessary; e.g. if the current scene contains a red puck but the goal has a blue block, it would confuse the policy.</p>
+
+<p>Other than the state encoder <script type="math/tex">e(s) \triangleq \mu_\phi(s)</script>, CC-VAE trains a second convolutional encoder <script type="math/tex">e_0(.)</script> to translate the starting state <script type="math/tex">s_0</script> into a compact context representation <script type="math/tex">c = e_0(s_0)</script>. Two encoders, <script type="math/tex">e(.)</script> and <script type="math/tex">e_0(.)</script>, are intentionally different without shared weights, as they are expected to encode different factors of image variation. In addition to the loss function of CVAE, CC-VAE adds an extra term to learn to reconstruct <script type="math/tex">c</script> back to <script type="math/tex">s_0</script>, <script type="math/tex">\hat{s}_0 = d_0(c)</script>.</p>
+
+<script type="math/tex; mode=display">\mathcal{L}_\text{CC-VAE} = \mathcal{L}_\text{CVAE} + \log p(s_0\vert c)</script>
+
+<p style="width: 100%;" class="center"><img src="/lil-log/assets/images/CC-RIG-goal-samples.png" alt="RIG goal samples" /></p>
+<p><em>Fig. 23. Examples of imagined goals generated by CVAE that conditions on the context image (the first row), while VAE fails to capture the object consistency. (Image source: <a href="https://arxiv.org/abs/1910.11670">Nair, et al., 2019</a>).</em></p>
+
+<blockquote>
+  <p>A couple common observations:</p>
+  <ul>
+    <li>Combining multiple pretext tasks improves performance;</li>
+    <li>Deeper networks improve the quality of representation;</li>
+    <li>Supervised learning baselines still beat all of them by far.</li>
+  </ul>
+</blockquote>
+
+<h3 id="references">References</h3>
+
+<p>[1] Alexey Dosovitskiy, et al. <a href="https://arxiv.org/abs/1406.6909">“Discriminative unsupervised feature learning with exemplar convolutional neural networks.”</a> IEEE transactions on pattern analysis and machine intelligence 38.9 (2015): 1734-1747.</p>
+
+<p>[2] Spyros Gidaris, Praveer Singh &amp; Nikos Komodakis. <a href="https://arxiv.org/abs/1803.07728">“Unsupervised Representation Learning by Predicting Image Rotations”</a> ICLR 2018.</p>
+
+<p>[3] Carl Doersch, Abhinav Gupta, and Alexei A. Efros. <a href="https://arxiv.org/abs/1505.05192">“Unsupervised visual representation learning by context prediction.”</a> ICCV. 2015.</p>
+
+<p>[4] Mehdi Noroozi &amp; Paolo Favaro. <a href="https://arxiv.org/abs/1603.09246">“Unsupervised learning of visual representations by solving jigsaw puzzles.”</a> ECCV, 2016.</p>
+
+<p>[5] Mehdi Noroozi, Hamed Pirsiavash, and Paolo Favaro. <a href="https://arxiv.org/abs/1708.06734">“Representation learning by learning to count.”</a> ICCV. 2017.</p>
+
+<p>[6] Richard Zhang, Phillip Isola &amp; Alexei A. Efros. <a href="https://arxiv.org/abs/1603.08511">“Colorful image colorization.”</a> ECCV, 2016.</p>
+
+<p>[7] Pascal Vincent, et al. <a href="https://www.cs.toronto.edu/~larocheh/publications/icml-2008-denoising-autoencoders.pdf">“Extracting and composing robust features with denoising autoencoders.”</a> ICML, 2008.</p>
+
+<p>[8] Jeff Donahue, Philipp Krähenbühl, and Trevor Darrell. <a href="https://arxiv.org/abs/1605.09782">“Adversarial feature learning.”</a> ICLR 2017.</p>
+
+<p>[9] Deepak Pathak, et al. <a href="https://arxiv.org/abs/1604.07379">“Context encoders: Feature learning by inpainting.”</a> CVPR. 2016.</p>
+
+<p>[10] Richard Zhang, Phillip Isola, and Alexei A. Efros. <a href="https://arxiv.org/abs/1611.09842">“Split-brain autoencoders: Unsupervised learning by cross-channel prediction.”</a> CVPR. 2017.</p>
+
+<p>[11] Xiaolong Wang &amp; Abhinav Gupta. <a href="https://arxiv.org/abs/1505.00687">“Unsupervised Learning of Visual Representations using Videos.”</a> ICCV. 2015.</p>
+
+<p>[12] Carl Vondrick, et al. <a href="https://arxiv.org/pdf/1806.09594.pdf">“Tracking Emerges by Colorizing Videos”</a> ECCV. 2018.</p>
+
+<p>[13] Ishan Misra, C. Lawrence Zitnick, and Martial Hebert. <a href="https://arxiv.org/abs/1603.08561">“Shuffle and learn: unsupervised learning using temporal order verification.”</a> ECCV. 2016.</p>
+
+<p>[14] Basura Fernando, et al. <a href="https://arxiv.org/abs/1611.06646">“Self-Supervised Video Representation Learning With Odd-One-Out Networks”</a> CVPR. 2017.</p>
+
+<p>[15] Donglai Wei, et al. <a href="https://www.robots.ox.ac.uk/~vgg/publications/2018/Wei18/wei18.pdf">“Learning and Using the Arrow of Time”</a> CVPR. 2018.</p>
+
+<p>[16] Florian Schroff, Dmitry Kalenichenko and James Philbin. <a href="https://arxiv.org/abs/1503.03832">“FaceNet: A Unified Embedding for Face Recognition and Clustering”</a> CVPR. 2015.</p>
+
+<p>[17] Pierre Sermanet, et al. <a href="https://arxiv.org/abs/1704.06888">“Time-Contrastive Networks: Self-Supervised Learning from Video”</a> CVPR. 2018.</p>
+
+<p>[18] Debidatta Dwibedi, et al. <a href="https://arxiv.org/abs/1808.00928">“Learning actionable representations from visual observations.”</a> IROS. 2018.</p>
+
+<p>[19] Eric Jang &amp; Coline Devin, et al. <a href="https://arxiv.org/abs/1811.06964">“Grasp2Vec: Learning Object Representations from Self-Supervised Grasping”</a> CoRL. 2018.</p>
+
+<p>[20] Ashvin Nair, et al. <a href="https://arxiv.org/abs/1807.04742">“Visual reinforcement learning with imagined goals”</a> NeuriPS. 2018.</p>
+
+<p>[21] Ashvin Nair, et al. <a href="https://arxiv.org/abs/1910.11670">“Contextual imagined goals for self-supervised robotic learning”</a> CoRL. 2019.</p>
+
+<p>[22] Aaron van den Oord, Yazhe Li &amp; Oriol Vinyals. <a href="https://arxiv.org/abs/1807.03748">“Representation Learning with Contrastive Predictive Coding”</a> arXiv preprint arXiv:1807.03748, 2018.</p>
+
+<p>[23] Olivier J. Henaff, et al. <a href="https://arxiv.org/abs/1905.09272">“Data-Efficient Image Recognition with Contrastive Predictive Coding”</a> arXiv preprint arXiv:1905.09272, 2019.</p>
+
+
+  </div>
+
+
+  <div class="page-navigation">
+    
+      <a class="prev" href="/lil-log/2019/09/05/evolution-strategies.html">&larr; Evolution Strategies</a>
+    
+
+    
+      <a class="next" href="/lil-log/2020/01/29/curriculum-for-reinforcement-learning.html">Curriculum for Reinforcement Learning &rarr;</a>
+    
+  </div>
+
+  
+    <div id="disqus_thread"></div>
+<script>
+    (function() {  // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = 'https://lilianweng-github-io-lil-log.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+<noscript>
+    Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+</noscript>
+
+  
+
+</article>
+
+      </div>
+    </main>
+
+    <div style="clear: both;"/>
+<footer class="site-footer">
+    2019 &copy; Built by <a href="https://jekyllrb.com/" target="_blank">Jekyll</a> and <a href="https://github.com/jekyll/minima/" target="_blank">minima</a> | View <a href="https://github.com/lilianweng/lil-log/tree/gh-pages" target="_blank">this</a> on Github | <a href="/lil-log/tags.html">Tags</a> | <a href="/lil-log/contact.html">Contact</a> | <a href="/lil-log/FAQ.html">FAQ</a>
+
+    <p>
+        <a href="/lil-log/feed.xml" target="_blank">
+            <img src="/lil-log/assets/images/logo_rss.png" />
+        </a>
+        <a href="https://scholar.google.com/citations?user=dCa-pW8AAAAJ&hl=en&oi=ao" target="_blank">
+            <img src="/lil-log/assets/images/logo_scholar.png" />
+        </a>
+        <a href="https://github.com/lilianweng" target="_blank">
+            <img src="/lil-log/assets/images/logo_github.png" />
+        </a>
+        <a href="https://www.instagram.com/lilianweng/" target="_blank">
+            <img src="/lil-log/assets/images/logo_instagram.png" />
+        </a>
+        <a href="https://twitter.com/lilianweng/" target="_blank">
+            <img src="/lil-log/assets/images/logo_twitter.png" />
+        </a>
+    </p>
+</footer>
+
+
+  </body>
+
+</html>
