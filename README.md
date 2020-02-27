@@ -68,3 +68,9 @@ https://arxiv.org/pdf/2002.06838.pdf
 Chronofold: a data structure for versioned text
 
 https://arxiv.org/pdf/2002.09511.pdf
+
+
+Using Supervised Learning to Classify Metadata ofResearch Data by Discipline of Research
+
+https://arxiv.org/pdf/1910.09313.pdf
+
