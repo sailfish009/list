@@ -63,3 +63,8 @@ https://arxiv.org/pdf/1911.04252.pdf
 Hierarchical Rule Induction Network for Abstract Visual Reasoning
 
 https://arxiv.org/pdf/2002.06838.pdf
+
+
+Chronofold: a data structure for versioned text
+
+https://arxiv.org/pdf/2002.09511.pdf
