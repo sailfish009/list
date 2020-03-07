@@ -74,3 +74,8 @@ Using Supervised Learning to Classify Metadata ofResearch Data by Discipline of 
 
 https://arxiv.org/pdf/1910.09313.pdf
 
+
+Objects as Points
+
+https://arxiv.org/pdf/1904.07850v2.pdf
+
