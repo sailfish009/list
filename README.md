@@ -79,3 +79,8 @@ Objects as Points
 
 https://arxiv.org/pdf/1904.07850v2.pdf
 
+
+Do Better ImageNet Models Transfer Better?
+
+http://openaccess.thecvf.com/content_CVPR_2019/papers/Kornblith_Do_Better_ImageNet_Models_Transfer_Better_CVPR_2019_paper.pdf
+
