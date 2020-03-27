@@ -84,3 +84,7 @@ Do Better ImageNet Models Transfer Better?
 
 http://openaccess.thecvf.com/content_CVPR_2019/papers/Kornblith_Do_Better_ImageNet_Models_Transfer_Better_CVPR_2019_paper.pdf
 
+
+Fixing the train-test resolution discrepancy
+
+https://arxiv.org/pdf/1906.06423.pdf
