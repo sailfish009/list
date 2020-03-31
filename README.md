@@ -88,3 +88,8 @@ http://openaccess.thecvf.com/content_CVPR_2019/papers/Kornblith_Do_Better_ImageN
 Fixing the train-test resolution discrepancy
 
 https://arxiv.org/pdf/1906.06423.pdf
+
+
+Convolutional Character Networks
+
+https://arxiv.org/pdf/1910.07954.pdf
