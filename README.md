@@ -93,3 +93,9 @@ https://arxiv.org/pdf/1906.06423.pdf
 Convolutional Character Networks
 
 https://arxiv.org/pdf/1910.07954.pdf
+
+
+Class-Balanced Loss Based on Effective Number of Samples
+
+https://arxiv.org/pdf/1901.05555.pdf
+
