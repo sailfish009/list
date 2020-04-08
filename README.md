@@ -99,3 +99,8 @@ Class-Balanced Loss Based on Effective Number of Samples
 
 https://arxiv.org/pdf/1901.05555.pdf
 
+
+Efficient Backbone Search for Scene Text Recognition
+
+https://arxiv.org/pdf/2003.06567.pdf
+
