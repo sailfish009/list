@@ -104,3 +104,8 @@ Efficient Backbone Search for Scene Text Recognition
 
 https://arxiv.org/pdf/2003.06567.pdf
 
+
+Mapping the landscape of Artificial Intelligence applicationsagainst COVID-19
+
+https://arxiv.org/pdf/2003.11336.pdf
+
