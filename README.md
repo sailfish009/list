@@ -109,3 +109,8 @@ Mapping the landscape of Artificial Intelligence applicationsagainst COVID-19
 
 https://arxiv.org/pdf/2003.11336.pdf
 
+
+Generative Language Modeling for AutomatedTheorem Proving
+
+https://arxiv.org/pdf/2009.03393.pdf
+
