@@ -119,3 +119,7 @@ A (Slightly) Improved Approximation Algorithm for Metric TSP
 
 https://arxiv.org/abs/2007.01409
 
+
+ProtTrans: Towards Cracking the Language of Life’s Code Through Self-Supervised Deep Learning and High Performance Computing
+
+https://www.biorxiv.org/content/10.1101/2020.07.12.199554v2.full.pdf
