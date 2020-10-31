@@ -123,3 +123,8 @@ https://arxiv.org/abs/2007.01409
 ProtTrans: Towards Cracking the Language of Life’s Code Through Self-Supervised Deep Learning and High Performance Computing
 
 https://www.biorxiv.org/content/10.1101/2020.07.12.199554v2.full.pdf
+
+
+High-Quality Protein Force Fields with Noisy Quantum Processors
+
+https://arxiv.org/pdf/1907.07128.pdf
