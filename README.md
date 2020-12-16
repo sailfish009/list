@@ -128,3 +128,8 @@ https://www.biorxiv.org/content/10.1101/2020.07.12.199554v2.full.pdf
 High-Quality Protein Force Fields with Noisy Quantum Processors
 
 https://arxiv.org/pdf/1907.07128.pdf
+
+
+Dynamic ReLU
+
+https://arxiv.org/pdf/2003.10027.pdf
