@@ -133,3 +133,8 @@ https://arxiv.org/pdf/1907.07128.pdf
 Dynamic ReLU
 
 https://arxiv.org/pdf/2003.10027.pdf
+
+
+Effective Dimensionality Reduction for Word Embeddings 
+
+https://www.aclweb.org/anthology/2020.acl-main.726.pdf
