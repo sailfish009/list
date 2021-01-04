@@ -138,3 +138,8 @@ https://arxiv.org/pdf/2003.10027.pdf
 Effective Dimensionality Reduction for Word Embeddings 
 
 https://www.aclweb.org/anthology/2020.acl-main.726.pdf
+
+
+VoroCNN: Deep convolutional neural network built on 3D Voronoi tessellation of protein structures
+
+https://www.biorxiv.org/content/10.1101/2020.04.27.063586v1.full.pdf
