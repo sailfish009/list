@@ -143,3 +143,8 @@ https://www.aclweb.org/anthology/2020.acl-main.726.pdf
 VoroCNN: Deep convolutional neural network built on 3D Voronoi tessellation of protein structures
 
 https://www.biorxiv.org/content/10.1101/2020.04.27.063586v1.full.pdf
+
+
+Deep Graph Generators: A Survey
+
+https://arxiv.org/pdf/2012.15544.pdf
